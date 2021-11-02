@@ -32,20 +32,22 @@ type sendableInvoice struct {
 	IsFlexible                bool
 	DisableNotification       bool
 	ReplyToMessageId          int
+	AllowSendingWithoutReply  bool
 	ReplyMarkup               ReplyMarkup
 }
 
 func (b Bot) NewSendableInvoice(chatId int, title string, description string, payload string, providerToken string, startParameter string, currency string, prices []LabeledPrice) *sendableInvoice {
 	return &sendableInvoice{
-		bot:            b,
-		ChatId:         chatId,
-		Title:          title,
-		Description:    description,
-		Payload:        payload,
-		ProviderToken:  providerToken,
-		StartParameter: startParameter,
-		Currency:       currency,
-		Prices:         prices,
+		bot:                      b,
+		ChatId:                   chatId,
+		Title:                    title,
+		Description:              description,
+		Payload:                  payload,
+		ProviderToken:            providerToken,
+		StartParameter:           startParameter,
+		Currency:                 currency,
+		Prices:                   prices,
+		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
 	}
 }
 
@@ -85,17 +87,15 @@ func (i *sendableInvoice) Send() (*Message, error) {
 	v.Add("is_flexible", strconv.FormatBool(i.IsFlexible))
 	v.Add("disable_notification", strconv.FormatBool(i.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(i.ReplyToMessageId))
+	v.Add("allow_sending_without_reply", strconv.FormatBool(i.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := Get(i.bot, "sendInvoice", v)
+	r, err := i.bot.Get("sendInvoice", v)
 	if err != nil {
-		return nil, errors.New(r.Description)
-	}
-	if !r.Ok {
-		return nil, errors.New(r.Description)
+		return nil, err
 	}
 
-	return i.bot.ParseMessage(r.Result)
+	return i.bot.ParseMessage(r)
 }
 
 type sendableAnswerShippingQuery struct {
@@ -107,7 +107,7 @@ type sendableAnswerShippingQuery struct {
 }
 
 func (b Bot) NewSendableAnswerShippingQuery(shippingQueryId string, ok bool) *sendableAnswerShippingQuery {
-	return &sendableAnswerShippingQuery{ShippingQueryId: shippingQueryId, Ok: ok}
+	return &sendableAnswerShippingQuery{bot: b, ShippingQueryId: shippingQueryId, Ok: ok}
 }
 
 func (asq *sendableAnswerShippingQuery) Send() (bool, error) {
@@ -122,50 +122,36 @@ func (asq *sendableAnswerShippingQuery) Send() (bool, error) {
 	v.Add("shipping_options", string(shippingOptions))
 	v.Add("error_message", asq.ErrorMessage)
 
-	r, err := Get(asq.bot, "answerShippingQuery", v)
+	r, err := asq.bot.Get("answerShippingQuery", v)
 	if err != nil {
-		return false, errors.Wrapf(err, "unable to answerShippingQuery")
-	}
-	if !r.Ok {
-		return false, errors.New("invalid answerShippingQuery")
+		return false, err
 	}
 
 	var bb bool
-	return bb, json.Unmarshal(r.Result, &bb)
+	return bb, json.Unmarshal(r, &bb)
 }
 
 type sendableAnswerPreCheckoutQuery struct {
 	bot             Bot
 	ShippingQueryId string
 	Ok              bool
-	ShippingOptions []ShippingOption
 	ErrorMessage    string
 }
 
 func (b Bot) NewSendableAnswerPreCheckoutQuery(shippingQueryId string, ok bool) *sendableAnswerPreCheckoutQuery {
-	return &sendableAnswerPreCheckoutQuery{ShippingQueryId: shippingQueryId, Ok: ok}
+	return &sendableAnswerPreCheckoutQuery{bot: b, ShippingQueryId: shippingQueryId, Ok: ok}
 }
 
 func (apcq *sendableAnswerPreCheckoutQuery) Send() (bool, error) {
-	shippingOptions, err := json.Marshal(apcq.ShippingOptions)
-	if err != nil {
-		return false, errors.Wrapf(err, "could not marshal pre checkout query shipping options")
-	}
-
 	v := url.Values{}
-	v.Add("shipping_query_id", apcq.ShippingQueryId)
+	v.Add("pre_checkout_query_id", apcq.ShippingQueryId)
 	v.Add("ok", strconv.FormatBool(apcq.Ok))
-	v.Add("shipping_options", string(shippingOptions))
 	v.Add("error_message", apcq.ErrorMessage)
 
-	r, err := Get(apcq.bot, "answerPreCheckoutQuery", v)
+	r, err := apcq.bot.Get("answerPreCheckoutQuery", v)
 	if err != nil {
-		return false, errors.Wrapf(err, "unable to answerPreCheckoutQuery")
+		return false, err
 	}
-	if !r.Ok {
-		return false, errors.New("invalid answerPreCheckoutQuery")
-	}
-
 	var bb bool
-	return bb, json.Unmarshal(r.Result, &bb)
+	return bb, json.Unmarshal(r, &bb)
 }

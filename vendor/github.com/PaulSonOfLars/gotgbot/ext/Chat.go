@@ -1,9 +1,5 @@
 package ext
 
-import (
-	"io"
-)
-
 type Chat struct {
 	Bot              Bot              `json:"-"`
 	Id               int              `json:"id"`
@@ -13,6 +9,7 @@ type Chat struct {
 	FirstName        string           `json:"first_name"`
 	LastName         string           `json:"last_name"`
 	Photo            *ChatPhoto       `json:"photo"`
+	Bio              string           `json:"bio"`
 	Description      string           `json:"description"`
 	InviteLink       string           `json:"invite_link"`
 	PinnedMessage    *Message         `json:"pinned_message"`
@@ -20,6 +17,8 @@ type Chat struct {
 	SlowModeDelay    int              `json:"slow_mode_delay"`
 	StickerSetName   string           `json:"sticker_set_name"`
 	CanSetStickerSet bool             `json:"can_set_sticker_set"`
+	LinkedChatId     int              `json:"linked_chat_id"`
+	Location         ChatLocation     `json:"location"`
 }
 
 type ChatPermissions struct {
@@ -33,6 +32,11 @@ type ChatPermissions struct {
 	CanPinMessages        *bool `json:"can_pin_messages,omitempty"`
 }
 
+type ChatLocation struct {
+	Location Location `json:"location"`
+	Address  string   `json:"address"`
+}
+
 type ChatPhoto struct {
 	SmallFileId       string `json:"small_file_id"`
 	SmallFileUniqueId string `json:"small_file_unique_id"`
@@ -44,7 +48,7 @@ type ChatMember struct {
 	User                  *User  `json:"user"`
 	Status                string `json:"status"`
 	CustomTitle           string `json:"custom_title"`
-	UntilDate             int64  `json:"until_date"`
+	IsAnonymous           bool   `json:"is_anonymous"`
 	CanBeEdited           bool   `json:"can_be_edited"`
 	CanPostMessages       bool   `json:"can_post_messages"`
 	CanEditMessages       bool   `json:"can_edit_messages"`
@@ -57,9 +61,10 @@ type ChatMember struct {
 	IsMember              bool   `json:"is_member"`
 	CanSendMessages       bool   `json:"can_send_messages"`
 	CanSendMediaMessages  bool   `json:"can_send_media_messages"`
-	CanSendPolls          bool   `json:"can_send_media_messages"`
+	CanSendPolls          bool   `json:"can_send_polls"`
 	CanSendOtherMessages  bool   `json:"can_send_other_messages"`
 	CanAddWebPagePreviews bool   `json:"can_add_web_page_previews"`
+	UntilDate             int64  `json:"until_date"`
 }
 
 func (chat Chat) SendAction(action string) (bool, error) {
@@ -76,6 +81,10 @@ func (chat Chat) UnbanMember(userId int) (bool, error) {
 
 func (chat Chat) RestrictMember(userId int) (bool, error) {
 	return chat.Bot.RestrictChatMember(chat.Id, userId)
+}
+
+func (chat Chat) UnRestrictMember(userId int) (bool, error) {
+	return chat.Bot.UnRestrictChatMember(chat.Id, userId)
 }
 
 func (chat Chat) PromoteMember(userId int) (bool, error) {
@@ -98,16 +107,8 @@ func (chat Chat) ExportInviteLink() (string, error) {
 	return chat.Bot.ExportChatInviteLink(chat.Id)
 }
 
-func (chat Chat) SetChatPhotoStr(photoId string) (bool, error) {
-	return chat.Bot.SetChatPhotoStr(chat.Id, photoId)
-}
-
-func (chat Chat) SetChatPhotoPath(path string) (bool, error) {
-	return chat.Bot.SetChatPhotoPath(chat.Id, path)
-}
-
-func (chat Chat) SetChatPhotoReader(reader io.Reader) (bool, error) {
-	return chat.Bot.SetChatPhotoReader(chat.Id, reader)
+func (chat Chat) SetChatPhoto(photo InputFile) (bool, error) {
+	return chat.Bot.SetChatPhoto(chat.Id, photo)
 }
 
 func (chat Chat) DeletePhoto() (bool, error) {
@@ -134,7 +135,15 @@ func (chat Chat) UnpinMessage() (bool, error) {
 	return chat.Bot.UnpinChatMessage(chat.Id)
 }
 
-func (chat Chat) Leave(description string) (bool, error) {
+func (chat Chat) UnpinMessageById(messageId int) (bool, error) {
+	return chat.Bot.UnpinChatMessageById(chat.Id, messageId)
+}
+
+func (chat Chat) UnpinAll() (bool, error) {
+	return chat.Bot.UnpinAllChatMessages(chat.Id)
+}
+
+func (chat Chat) Leave() (bool, error) {
 	return chat.Bot.LeaveChat(chat.Id)
 }
 

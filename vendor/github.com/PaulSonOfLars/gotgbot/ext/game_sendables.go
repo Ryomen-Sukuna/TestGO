@@ -4,41 +4,55 @@ import (
 	"encoding/json"
 	"net/url"
 	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 type sendableGame struct {
-	bot                 Bot `json:"-"`
-	ChatId              int
-	GameShortName       string
-	DisableNotification bool
-	ReplyToMessageId    int
-	ReplyMarkup         InlineKeyboardMarkup
+	bot                      Bot
+	ChatId                   int
+	GameShortName            string
+	DisableNotification      bool
+	ReplyToMessageId         int
+	AllowSendingWithoutReply bool
+	ReplyMarkup              *InlineKeyboardMarkup
 }
 
 func (b Bot) NewSendableGame(chatId int, gameShortName string) *sendableGame {
-	return &sendableGame{bot: b, ChatId: chatId, GameShortName: gameShortName}
+	return &sendableGame{
+		bot:                      b,
+		ChatId:                   chatId,
+		GameShortName:            gameShortName,
+		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
+	}
 }
 
 func (g *sendableGame) Send() (*Message, error) {
+	var replyMarkupBytes []byte
+	if g.ReplyMarkup != nil {
+		var err error
+		replyMarkupBytes, err = g.ReplyMarkup.Marshal()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	v := url.Values{}
 	v.Add("chat_id", strconv.Itoa(g.ChatId))
 	v.Add("game_short_name", g.GameShortName)
+	v.Add("disable_notification", strconv.FormatBool(g.DisableNotification))
+	v.Add("reply_to_message_id", strconv.Itoa(g.ReplyToMessageId))
+	v.Add("allow_sending_without_reply", strconv.FormatBool(g.AllowSendingWithoutReply))
+	v.Add("reply_markup", string(replyMarkupBytes))
 
-	r, err := Get(g.bot, "sendGame", v)
+	r, err := g.bot.Get("sendGame", v)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to execute sendGame request")
-	}
-	if !r.Ok {
-		return nil, errors.Wrapf(err, "invalid sendGame request")
+		return nil, err
 	}
 
-	return g.bot.ParseMessage(r.Result)
+	return g.bot.ParseMessage(r)
 }
 
 type sendableSetGameScore struct {
-	bot                Bot `json:"-"`
+	bot                Bot
 	UserId             int
 	Score              int
 	Force              bool
@@ -66,20 +80,16 @@ func (sgs *sendableSetGameScore) Send() (bool, error) {
 	v.Add("message_id", strconv.Itoa(sgs.MessageId))
 	v.Add("inline_message_id", sgs.InlineMessageId)
 
-	r, err := Get(sgs.bot, "setGameScore", v)
+	r, err := sgs.bot.Get("setGameScore", v)
 	if err != nil {
-		return false, errors.Wrapf(err, "unable to execute setGameScore request")
+		return false, err
 	}
-	if !r.Ok {
-		return false, errors.Wrapf(err, "invalid setGameScore request")
-	}
-
 	var bb bool
-	return bb, json.Unmarshal(r.Result, &bb)
+	return bb, json.Unmarshal(r, &bb)
 }
 
 type sendableGetGameHighScores struct {
-	bot             Bot `json:"-"`
+	bot             Bot
 	UserId          int
 	ChatId          int
 	MessageId       int
@@ -101,14 +111,10 @@ func (gghs *sendableGetGameHighScores) Send() ([]GameHighScore, error) {
 	v.Add("message_id", strconv.Itoa(gghs.MessageId))
 	v.Add("inline_message_id", gghs.InlineMessageId)
 
-	r, err := Get(gghs.bot, "getGameHighScores", v)
+	r, err := gghs.bot.Get("getGameHighScores", v)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to execute getGameHighScores request")
+		return nil, err
 	}
-	if !r.Ok {
-		return nil, errors.Wrapf(err, "invalid getGameHighScores request")
-	}
-
 	var ghs []GameHighScore
-	return ghs, json.Unmarshal(r.Result, &ghs)
+	return ghs, json.Unmarshal(r, &ghs)
 }
