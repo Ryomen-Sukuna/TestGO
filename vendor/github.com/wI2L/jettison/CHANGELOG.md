@@ -4,8 +4,38 @@ All notable changes to this project are documented in this file.
 
 **THIS LIBRARY IS STILL IN ALPHA AND THERE ARE NO GUARANTEES REGARDING API STABILITY YET**
 
+## [v0.7.3] - 2021-11-02
+- Fix the encoding of zero-value time.Duration type in string format.
+
+## [v0.7.2] - 2021-08-31
+- Minor performances improvements (remove inlined functions in `appendEscapedBytes`).
+
+## [v0.7.1] - 2020-03-03
+- Fix a regression in the marshaling of `nil` map keys that implement the `encoding.TextMarshaler` interface, intoduced during refactor in version [**v0.5.0**](https://github.com/wI2L/jettison/compare/v0.4.1...v0.5.0).
+- Split `TestTextMarshalerMapKey` and `TestNilMarshaler` tests with build constraints to allow previously ignored cases to run with Go1.14.
+
+## [v0.7.0] - 2020-02-17
+- Add the `omitnil` field tag's option, which specifies that a field with a nil pointer should be omitted from the encoding. This option has precedence over the `omitempty` option. See this issue for more informations about the original proposal: [#22480](https://golang.org/issue/22480).
+
+## [v0.6.0] - 2020-02-14
+- Add support for the `sync.Map` type. The marshaling behavior for this type is similar to the one of the Go `map`.
+
+## [v0.5.0] - 2020-02-02
+#### Refactor of the entire project.
+This includes the following changes, but not limited to:
+
+- Remove the `Encoder` type to simplify the usage of the library and stick more closely to the design of `encoding/json`
+- Reduce the number of closures used. This improves readability of stacktraces and performance profiles.
+- Improve the marshaling performances of many types.
+- Add support for marshaling `json.RawMessage` values.
+- Add new options `DenyList`, `NoNumberValidation`, `NoCompact`, and rename some others.
+- Replace the `Marshaler` and `MarshalerCtx` interfaces by `AppendMarshaler` and `AppendMarshalerCtx` to follow the new *append* model. See this issue for more details: [#34701](https://golang.org/issue/34701).
+- Remove the `IntegerBase` option, which didn't worked properly with the `string` JSON tag.
+
+> Some of the improvements have been inspired by the **github.com/segmentio/encoding** project.
+
 ## [v0.4.1] - 2019-10-23
-- Fix unsafe misuses reported by go vet and the new `-d=checkptr` cmd/compile flag introduced in the Go1.14 development tree by Matthew Dempsky. The issues were mostly related to invalid arithmetic operations and dereferences.
+- Fix unsafe misuses reported by go vet and the new `-d=checkptr` cmd/compile flag introduced in the Go1.14 development tree by *Matthew Dempsky*. The issues were mostly related to invalid arithmetic operations and dereferences.
 - Fix map key types precedence order during marshaling. Keys of any string type are used directly instead of the `MarshalText` method, if the types also implement the `encoding.TextMarshaler` interface.
 
 ## [v0.4.0] - 2019-10-18
@@ -36,6 +66,12 @@ All notable changes to this project are documented in this file.
 ## [v0.1.0] - 2019-08-30
 Initial realease.
 
+[v0.7.3]: https://github.com/wI2L/jettison/compare/v0.7.2...v0.7.3
+[v0.7.2]: https://github.com/wI2L/jettison/compare/v0.7.1...v0.7.2
+[v0.7.1]: https://github.com/wI2L/jettison/compare/v0.7.0...v0.7.1
+[v0.7.0]: https://github.com/wI2L/jettison/compare/v0.6.0...v0.7.0
+[v0.6.0]: https://github.com/wI2L/jettison/compare/v0.5.0...v0.6.0
+[v0.5.0]: https://github.com/wI2L/jettison/compare/v0.4.1...v0.5.0
 [v0.4.1]: https://github.com/wI2L/jettison/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/wI2L/jettison/compare/v0.3.1...v0.4.0
 [v0.3.1]: https://github.com/wI2L/jettison/compare/v0.3.0...v0.3.1

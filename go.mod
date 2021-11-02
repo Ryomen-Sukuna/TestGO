@@ -15,6 +15,6 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/tcnksm/go-httpstat v0.2.0
-	github.com/wI2L/jettison v0.4.1
+	github.com/wI2L/jettison v0.7.3
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
