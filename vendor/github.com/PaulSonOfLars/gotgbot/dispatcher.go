@@ -5,7 +5,7 @@ import (
 	"runtime/debug"
 	"sort"
 
-	"go.uber.org/zap"
+	"github.com/sirupsen/logrus"
 
 	"github.com/PaulSonOfLars/gotgbot/ext"
 )
@@ -42,12 +42,11 @@ func (d Dispatcher) Start() {
 		select {
 		case limiter <- struct{}{}:
 		default:
-			// There is value in having this as a warn, but its also causing logspam... so let's not.
-			d.Bot.Logger.Debugf("update dispatcher has reached limit of %d", d.MaxRoutines)
+			logrus.Debugf("update dispatcher has reached limit of %d", d.MaxRoutines)
 			limiter <- struct{}{} // make sure to send anyway
 		}
 		go func(upd *RawUpdate) {
-			d.ProcessRawUpdate(upd)
+			d.processUpdate(upd)
 			<-limiter
 		}(upd)
 	}
@@ -59,23 +58,19 @@ type ContinueGroups struct{}
 func (eg EndGroups) Error() string      { return "Group iteration ended" }
 func (eg ContinueGroups) Error() string { return "Group iteration has continued" }
 
-func (d Dispatcher) ProcessRawUpdate(upd *RawUpdate) {
+func (d Dispatcher) processUpdate(upd *RawUpdate) {
 	defer func() {
 		if r := recover(); r != nil {
-			d.Bot.Logger.Error(r)
+			logrus.Error(r)
 			debug.PrintStack()
 		}
 	}()
 
 	update, err := initUpdate(*upd, *d.Bot)
 	if err != nil {
-		d.Bot.Logger.Errorw("failed to init update while processing", zap.Error(err))
+		logrus.WithError(err).Error("failed to init update while processing")
 		return
 	}
-	d.ProcessUpdate(update)
-}
-
-func (d Dispatcher) ProcessUpdate(update *Update) {
 	for _, groupNum := range *d.handlerGroups {
 		for _, handler := range d.handlers[groupNum] {
 			if res, err := handler.CheckUpdate(update); res {
@@ -87,12 +82,12 @@ func (d Dispatcher) ProcessUpdate(update *Update) {
 					case ContinueGroups:
 						continue
 					default:
-						d.Bot.Logger.Warnw("error handling update", err.Error())
+						logrus.Warning(err.Error())
 					}
 				}
 				break // move to next group
 			} else if err != nil {
-				d.Bot.Logger.Errorw("failed to check update while processing", zap.Error(err))
+				logrus.WithError(err).Error("failed to check update while processing")
 				return
 			}
 		}

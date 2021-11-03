@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/url"
+	"os"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -16,22 +17,10 @@ type Sendable interface {
 // NewSendableMessage create a new message struct to send
 func (b Bot) NewSendableMessage(chatId int, text string) *sendableTextMessage {
 	return &sendableTextMessage{
-		bot:                      b,
-		ChatId:                   chatId,
-		Text:                     text,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-		DisableWebPreview:        b.DisableWebPreview,
-	}
-}
-
-// NewSendableMessage create a new message struct to send
-func (b Bot) NewSendableCopyMessage(chatId int, fromChatId int, messageId int) *sendableCopyMessage {
-	return &sendableCopyMessage{
-		bot:                      b,
-		ChatId:                   chatId,
-		FromChatId:               fromChatId,
-		MessageId:                messageId,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
+		bot:               b,
+		ChatId:            chatId,
+		Text:              text,
+		DisableWebPreview: b.DisableWebPreview,
 	}
 }
 
@@ -68,70 +57,37 @@ func (b Bot) NewSendableEditMessageReplyMarkup(chatId int, messageId int, markup
 
 // NewSendablePhoto creates a new photo struct to send
 func (b Bot) NewSendablePhoto(chatId int, caption string) *sendablePhoto {
-	return &sendablePhoto{
-		bot:                      b,
-		ChatId:                   chatId,
-		Caption:                  caption,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendablePhoto{bot: b, ChatId: chatId, Caption: caption}
 }
 
 // NewSendableAudio creates a new audio struct to send
 func (b Bot) NewSendableAudio(chatId int, caption string) *sendableAudio {
-	return &sendableAudio{
-		bot:                      b,
-		ChatId:                   chatId,
-		Caption:                  caption,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableAudio{bot: b, ChatId: chatId, Caption: caption}
 }
 
 // NewSendableDocument creates a new document struct to send
 func (b Bot) NewSendableDocument(chatId int, caption string) *sendableDocument {
-	return &sendableDocument{
-		bot:                      b,
-		ChatId:                   chatId,
-		Caption:                  caption,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableDocument{bot: b, ChatId: chatId, Caption: caption}
 }
 
 // NewSendableVideo creates a new video struct to send
 func (b Bot) NewSendableVideo(chatId int, caption string) *sendableVideo {
-	return &sendableVideo{
-		bot:                      b,
-		ChatId:                   chatId,
-		Caption:                  caption,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableVideo{bot: b, ChatId: chatId, Caption: caption}
 }
 
 // NewSendableVoice creates a new voice struct to send
 func (b Bot) NewSendableVoice(chatId int, caption string) *sendableVoice {
-	return &sendableVoice{
-		bot:                      b,
-		ChatId:                   chatId,
-		Caption:                  caption,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableVoice{bot: b, ChatId: chatId, Caption: caption}
 }
 
 // NewSendableVideoNote creates a new videonote struct to send
 func (b Bot) NewSendableVideoNote(chatId int) *sendableVideoNote {
-	return &sendableVideoNote{
-		bot:                      b,
-		ChatId:                   chatId,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableVideoNote{bot: b, ChatId: chatId}
 }
 
 // NewSendableMediaGroup creates a new mediagroup struct to send
 func (b Bot) NewSendableMediaGroup(chatId int) *sendableMediaGroup {
-	return &sendableMediaGroup{
-		bot:                      b,
-		ChatId:                   chatId,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableMediaGroup{bot: b, ChatId: chatId}
 }
 
 // NewSendableEditMessageMedia creates a new editmessage media struct to send
@@ -144,348 +100,172 @@ func (b Bot) NewSendableEditMessageMedia(chatId int, messageId int) *sendableEdi
 }
 
 func (b Bot) NewSendableLocation(chatId int) *sendableLocation {
-	return &sendableLocation{
-		bot:                      b,
-		ChatId:                   chatId,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
-}
-
-func (b Bot) NewSendableEditMessageLiveLocation(chatId int, latitude float64, longitude float64) *sendableEditMessageLiveLocation {
-	return &sendableEditMessageLiveLocation{bot: b, ChatId: chatId, Latitude: latitude, Longitude: longitude}
-}
-
-func (b Bot) NewSendableStopMessageLiveLocation(chatId int) *sendableStopMessageLiveLocation {
-	return &sendableStopMessageLiveLocation{bot: b, ChatId: chatId}
+	return &sendableLocation{bot: b, ChatId: chatId}
 }
 
 // NewSendableVenue creates a new venue struct to send
 func (b Bot) NewSendableVenue(chatId int) *sendableVenue {
-	return &sendableVenue{
-		bot:                      b,
-		ChatId:                   chatId,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableVenue{bot: b, ChatId: chatId}
 }
 
 // NewSendableContact creates a new contact struct to send
 func (b Bot) NewSendableContact(chatId int) *sendableContact {
-	return &sendableContact{
-		bot:                      b,
-		ChatId:                   chatId,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableContact{bot: b, ChatId: chatId}
 }
 
 // NewSendableChatAction creates a new chat action struct to send
 func (b Bot) NewSendableChatAction(chatId int) *sendableChatAction {
-	return &sendableChatAction{
-		bot:    b,
-		ChatId: chatId,
-	}
+	return &sendableChatAction{bot: b, ChatId: chatId}
 }
 
 // NewSendableAnimation creates a new animation struct to send
 func (b Bot) NewSendableAnimation(chatId int, caption string) *sendableAnimation {
-	return &sendableAnimation{
-		bot:                      b,
-		ChatId:                   chatId,
-		Caption:                  caption,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendableAnimation{bot: b, ChatId: chatId, Caption: caption}
 }
 
 // NewSendablePoll creates a new poll struct to send.
 func (b Bot) NewSendablePoll(chatId int, question string, options []string) *sendablePoll {
-	return &sendablePoll{
-		bot:                      b,
-		ChatId:                   chatId,
-		Question:                 question,
-		Options:                  options,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
+	return &sendablePoll{bot: b, ChatId: chatId, Question: question, Options: options}
 }
 
-// NewSendableDice creates a new poll struct to send.
-func (b Bot) NewSendableDice(chatId int) *sendableDice {
-	return &sendableDice{
-		bot:                      b,
-		ChatId:                   chatId,
-		AllowSendingWithoutReply: b.AllowSendingWithoutReply,
-	}
-}
-
-// NewSendableAnswerCallbackQuery creates a new callbackQuery struct to send.
+// NewSendablePoll creates a new callbackQuery struct to send.
 func (b Bot) NewSendableAnswerCallbackQuery(queryId string) *sendableCallbackQuery {
-	return &sendableCallbackQuery{
-		bot:             b,
-		CallbackQueryId: queryId,
-	}
+	return &sendableCallbackQuery{bot: b, CallbackQueryId: queryId}
 }
 
-type InputFile struct {
-	b      Bot
+type file struct {
 	Name   string
 	FileId string
+	Path   string
 	Reader io.Reader
 	URL    string
 }
 
-func (f InputFile) send(endpoint string, params url.Values, fileType string) (json.RawMessage, error) {
-	params.Add("name", f.Name)
-	if f.FileId != "" {
-		params.Add(fileType, f.FileId)
-		return f.b.Get(endpoint, params)
-	} else if f.URL != "" {
-		params.Add(fileType, f.URL)
-		return f.b.Get(endpoint, params)
-	} else if f.Reader != nil {
-		return f.b.Post(endpoint, params, map[string]PostFile{
-			fileType: {
-				File:     f.Reader,
-				FileName: f.Name,
-			}})
-	} else {
-		return nil, errors.New("the message had no files that could be sent")
-	}
-}
-
-func (f InputFile) GetMediaType(attachAs string, data map[string]PostFile) string {
-	if f.FileId != "" {
-		return f.FileId
-	} else if f.URL != "" {
-		return f.URL
-	} else if f.Reader != nil {
-		data[attachAs] = PostFile{
-			File:     f.Reader,
-			FileName: f.Name,
-		}
-		return "attach://" + attachAs
-	}
-	return ""
-}
-
-func (b Bot) NewFileId(fileId string) InputFile {
-	return InputFile{
-		b:      b,
-		FileId: fileId,
-	}
-}
-
-func (b Bot) NewFileURL(url string) InputFile {
-	return InputFile{
-		b:   b,
-		URL: url,
-	}
-}
-
-func (b Bot) NewFileReader(name string, r io.Reader) InputFile {
-	if name == "" {
-		name = "file"
-	}
-	return InputFile{
-		b:      b,
-		Name:   name,
-		Reader: r,
-	}
-}
-
 type InputMedia interface {
-	toJson(idx int) (map[string]string, map[string]PostFile, error)
+	getType() string
+	getValues(valType string) url.Values
+}
+
+type baseInputMedia struct {
+	Media     string
+	Caption   string
+	ParseMode string
+	// TODO: sort out "attach" logic
+	// Attached  io.Reader
+}
+
+func (bim baseInputMedia) getValues(valType string) url.Values {
+	v := url.Values{}
+	v.Add("type", valType)
+	v.Add("media", bim.Media)
+	v.Add("caption", bim.Caption)
+	v.Add("parse_mode", bim.ParseMode)
+	// v.Add("attached")
+	return v
 }
 
 type InputMediaAnimation struct {
-	Media           InputFile
-	Thumb           *InputFile
-	Caption         string
-	ParseMode       string
-	CaptionEntities []MessageEntity
-	Width           int
-	Height          int
-	Duration        int
+	baseInputMedia
+	// TODO: sort out thumbnails
+	// Thumb    file
+	Width    int
+	Height   int
+	Duration int
 }
 
-func (ima InputMediaAnimation) toJson(idx int) (map[string]string, map[string]PostFile, error) {
-	data := make(map[string]PostFile)
-	media := ima.Media.GetMediaType("media"+strconv.Itoa(idx), data)
-	var captionEntities []byte
-	if ima.CaptionEntities != nil {
-		var err error
-		captionEntities, err = json.Marshal(ima.CaptionEntities)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to wrap caption entities for inputMediaAnimation")
-		}
-	}
+func (ima InputMediaAnimation) getType() string {
+	return "animation"
+}
 
-	m := map[string]string{
-		"type":             "animation",
-		"media":            media,
-		"caption":          ima.Caption,
-		"parse_mode":       ima.ParseMode,
-		"caption_entities": string(captionEntities),
-		"width":            strconv.Itoa(ima.Width),
-		"height":           strconv.Itoa(ima.Height),
-		"duration":         strconv.Itoa(ima.Duration),
-	}
-	if ima.Thumb != nil {
-		m["thumb"] = ima.Thumb.GetMediaType("thumb"+strconv.Itoa(idx), data)
-	}
-	return m, data, nil
+func (ima InputMediaAnimation) getValues(valType string) url.Values {
+	v := ima.baseInputMedia.getValues(ima.getType())
+	// v.Add("thumb")
+	v.Add("width", strconv.Itoa(ima.Width))
+	v.Add("height", strconv.Itoa(ima.Height))
+	v.Add("duration", strconv.Itoa(ima.Duration))
+	return v
 }
 
 type InputMediaDocument struct {
-	Media                       InputFile
-	Thumb                       *InputFile
-	Caption                     string
-	ParseMode                   string
-	CaptionEntities             []MessageEntity
-	DisableContentTypeDetection bool
+	baseInputMedia
+	Thumb file
 }
 
-func (imd InputMediaDocument) toJson(idx int) (map[string]string, map[string]PostFile, error) {
-	data := make(map[string]PostFile)
-	media := imd.Media.GetMediaType("media"+strconv.Itoa(idx), data)
-	var captionEntities []byte
-	if imd.CaptionEntities != nil {
-		var err error
-		captionEntities, err = json.Marshal(imd.CaptionEntities)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to wrap caption entities for inputMediaDocument")
-		}
-	}
+func (imd InputMediaDocument) getType() string {
+	return "document"
+}
 
-	m := map[string]string{
-		"type":                           "document",
-		"media":                          media,
-		"caption":                        imd.Caption,
-		"parse_mode":                     imd.ParseMode,
-		"caption_entities":               string(captionEntities),
-		"disable_content_type_detection": strconv.FormatBool(imd.DisableContentTypeDetection),
-	}
-	if imd.Thumb != nil {
-		m["thumb"] = imd.Thumb.GetMediaType("thumb"+strconv.Itoa(idx), data)
-	}
-	return m, data, nil
+func (imd InputMediaDocument) getValues(valType string) url.Values {
+	v := imd.baseInputMedia.getValues(imd.getType())
+	// v.Add("thumb")
+	return v
 }
 
 type InputMediaAudio struct {
-	Media           InputFile
-	Thumb           *InputFile
-	Caption         string
-	ParseMode       string
-	CaptionEntities []MessageEntity
-	Duration        int
-	Performer       string
-	Title           string
+	baseInputMedia
+	Thumb     file
+	Duration  int
+	Performer string
+	Title     string
 }
 
-func (ima InputMediaAudio) toJson(idx int) (map[string]string, map[string]PostFile, error) {
-	data := make(map[string]PostFile)
-	media := ima.Media.GetMediaType("media"+strconv.Itoa(idx), data)
-	var captionEntities []byte
-	if ima.CaptionEntities != nil {
-		var err error
-		captionEntities, err = json.Marshal(ima.CaptionEntities)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to wrap caption entities for inputMediaAudio")
-		}
-	}
+func (ima InputMediaAudio) getType() string {
+	return "audio"
+}
 
-	m := map[string]string{
-		"type":             "audio",
-		"media":            media,
-		"caption":          ima.Caption,
-		"parse_mode":       ima.ParseMode,
-		"caption_entities": string(captionEntities),
-		"duration":         strconv.Itoa(ima.Duration),
-		"performer":        ima.Performer,
-		"title":            ima.Title,
-	}
-	if ima.Thumb != nil {
-		m["thumb"] = ima.Thumb.GetMediaType("thumb"+strconv.Itoa(idx), data)
-	}
-	return m, data, nil
+func (ima InputMediaAudio) getValues(valType string) url.Values {
+	v := ima.baseInputMedia.getValues(ima.getType())
+	// v.Add("thumb")
+	v.Add("duration", strconv.Itoa(ima.Duration))
+	v.Add("performer", ima.Performer)
+	v.Add("title", ima.Title)
+	return v
 }
 
 type InputMediaPhoto struct {
-	Media           InputFile
-	Caption         string
-	ParseMode       string
-	CaptionEntities []MessageEntity
+	baseInputMedia
 }
 
-func (imp InputMediaPhoto) toJson(idx int) (map[string]string, map[string]PostFile, error) {
-	data := make(map[string]PostFile)
-	media := imp.Media.GetMediaType("media"+strconv.Itoa(idx), data)
-	var captionEntities []byte
-	if imp.CaptionEntities != nil {
-		var err error
-		captionEntities, err = json.Marshal(imp.CaptionEntities)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to wrap caption entities for inputMediaPhoto")
-		}
-	}
+func (imp InputMediaPhoto) getType() string {
+	return "photo"
+}
 
-	return map[string]string{
-		"type":             "photo",
-		"media":            media,
-		"caption":          imp.Caption,
-		"parse_mode":       imp.ParseMode,
-		"caption_entities": string(captionEntities),
-	}, data, nil
+func (imp InputMediaPhoto) getValues(valType string) url.Values {
+	return imp.baseInputMedia.getValues(imp.getType())
 }
 
 type InputMediaVideo struct {
-	Media            InputFile
-	Thumb            *InputFile
-	Caption          string
-	ParseMode        string
-	CaptionEntities  []MessageEntity
+	baseInputMedia
+	Thumb            file
 	Width            int
 	Height           int
 	Duration         int
 	SupportStreaming bool
 }
 
-func (imv InputMediaVideo) toJson(idx int) (map[string]string, map[string]PostFile, error) {
-	data := make(map[string]PostFile)
-	media := imv.Media.GetMediaType("media"+strconv.Itoa(idx), data)
-	var captionEntities []byte
-	if imv.CaptionEntities != nil {
-		var err error
-		captionEntities, err = json.Marshal(imv.CaptionEntities)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to wrap caption entities for inputMediaVido")
-		}
-	}
+func (imv InputMediaVideo) getType() string {
+	return "video"
+}
 
-	m := map[string]string{
-		"type":              "video",
-		"media":             media,
-		"caption":           imv.Caption,
-		"parse_mode":        imv.ParseMode,
-		"caption_entities":  string(captionEntities),
-		"width":             strconv.Itoa(imv.Width),
-		"height":            strconv.Itoa(imv.Height),
-		"duration":          strconv.Itoa(imv.Duration),
-		"support_streaming": strconv.FormatBool(imv.SupportStreaming),
-	}
-	if imv.Thumb != nil {
-		m["thumb"] = imv.Thumb.GetMediaType("thumb"+strconv.Itoa(idx), data)
-	}
-	return m, data, nil
+func (imv InputMediaVideo) getValues(valType string) url.Values {
+	v := imv.baseInputMedia.getValues(imv.getType())
+	// v.Add("thumb")
+	v.Add("width", strconv.Itoa(imv.Width))
+	v.Add("height", strconv.Itoa(imv.Height))
+	v.Add("duration", strconv.Itoa(imv.Duration))
+	v.Add("duration", strconv.FormatBool(imv.SupportStreaming))
+	return v
 }
 
 type sendableTextMessage struct {
-	bot                      Bot
-	ChatId                   int
-	Text                     string
-	ParseMode                string
-	DisableWebPreview        bool
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot                 Bot
+	ChatId              int
+	Text                string
+	ParseMode           string
+	DisableWebPreview   bool
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableTextMessage) Send() (*Message, error) {
@@ -505,68 +285,16 @@ func (msg *sendableTextMessage) Send() (*Message, error) {
 	v.Add("disable_web_page_preview", strconv.FormatBool(msg.DisableWebPreview))
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.bot.Get("sendMessage", v)
+	r, err := Get(msg.bot, "sendMessage", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendMessage")
 	}
-
-	return msg.bot.ParseMessage(r)
-}
-
-type sendableCopyMessage struct {
-	bot                      Bot
-	ChatId                   int
-	FromChatId               int
-	MessageId                int
-	Caption                  string
-	ParseMode                string
-	CaptionEntities          []MessageEntity
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
-}
-
-func (msg *sendableCopyMessage) Send() (*Message, error) {
-	var replyMarkup []byte
-	if msg.ReplyMarkup != nil {
-		var err error
-		replyMarkup, err = msg.ReplyMarkup.Marshal()
-		if err != nil {
-			return nil, err
-		}
+	if !r.Ok {
+		return nil, errors.New(r.Description)
 	}
-
-	var captionEntities []byte
-	if msg.CaptionEntities != nil {
-		var err error
-		captionEntities, err = json.Marshal(msg.CaptionEntities)
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not marshal caption entities")
-		}
-	}
-
-	v := url.Values{}
-	v.Add("chat_id", strconv.Itoa(msg.ChatId))
-	v.Add("from_chat_id", strconv.Itoa(msg.FromChatId))
-	v.Add("message_id", strconv.Itoa(msg.MessageId))
-	v.Add("caption", msg.Caption)
-	v.Add("parse_mode", msg.ParseMode)
-	v.Add("caption_entities", string(captionEntities))
-	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
-	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
-	v.Add("reply_markup", string(replyMarkup))
-
-	r, err := msg.bot.Get("sendMessage", v)
-	if err != nil {
-		return nil, err
-	}
-
-	return msg.bot.ParseMessage(r)
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableEditMessageText struct {
@@ -599,12 +327,14 @@ func (msg *sendableEditMessageText) Send() (*Message, error) {
 	v.Add("disable_web_page_preview", strconv.FormatBool(msg.DisableWebPreview))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.bot.Get("editMessageText", v)
+	r, err := Get(msg.bot, "editMessageText", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to editMessageText")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableEditMessageCaption struct {
@@ -635,12 +365,14 @@ func (msg *sendableEditMessageCaption) Send() (*Message, error) {
 	v.Add("parse_mode", msg.ParseMode)
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.bot.Get("editMessageCaption", v)
+	r, err := Get(msg.bot, "editMessageCaption", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to editMessageCaption")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableEditMessageReplyMarkup struct {
@@ -667,24 +399,25 @@ func (msg *sendableEditMessageReplyMarkup) Send() (*Message, error) {
 	v.Add("inline_message_id", msg.InlineMessageId)
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.bot.Get("editMessageCaption", v)
+	r, err := Get(msg.bot, "editMessageCaption", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to editMessageCaption")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendablePhoto struct {
-	bot                      Bot
-	ChatId                   int
-	Photo                    InputFile
-	Caption                  string
-	ParseMode                string
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot    Bot
+	ChatId int
+	file
+	Caption             string
+	ParseMode           string
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendablePhoto) Send() (*Message, error) {
@@ -703,30 +436,30 @@ func (msg *sendablePhoto) Send() (*Message, error) {
 	v.Add("parse_mode", msg.ParseMode)
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.Photo.send("sendPhoto", v, "photo")
+	r, err := msg.bot.sendFile(msg.file, "photo", "sendPhoto", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendPhoto")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableAudio struct {
-	bot                      Bot
-	ChatId                   int
-	Audio                    InputFile
-	Caption                  string
-	ParseMode                string
-	Duration                 int
-	Performer                string
-	Title                    string
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot    Bot
+	ChatId int
+	file
+	Caption             string
+	ParseMode           string
+	Duration            int
+	Performer           string
+	Title               string
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableAudio) Send() (*Message, error) {
@@ -748,28 +481,28 @@ func (msg *sendableAudio) Send() (*Message, error) {
 	v.Add("title", msg.Title)
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.Audio.send("sendAudio", v, "audio")
+	r, err := msg.bot.sendFile(msg.file, "audio", "sendAudio", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendAudio")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableDocument struct {
-	bot                         Bot
-	ChatId                      int
-	Document                    InputFile
-	Caption                     string
-	ParseMode                   string
-	DisableContentTypeDetection bool
-	DisableNotification         bool
-	ReplyToMessageId            int
-	AllowSendingWithoutReply    bool
-	ReplyMarkup                 ReplyMarkup
+	bot     Bot
+	ChatId  int
+	DocName string // file name
+	file
+	Caption             string
+	ParseMode           string
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableDocument) Send() (*Message, error) {
@@ -786,34 +519,33 @@ func (msg *sendableDocument) Send() (*Message, error) {
 	v.Add("chat_id", strconv.Itoa(msg.ChatId))
 	v.Add("caption", msg.Caption)
 	v.Add("parse_mode", msg.ParseMode)
-	v.Add("disable_content_type_detection", strconv.FormatBool(msg.DisableContentTypeDetection))
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.Document.send("sendDocument", v, "document")
+	r, err := msg.bot.sendFile(msg.file, "document", "sendDocument", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendDocument")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableVideo struct {
-	bot                      Bot
-	ChatId                   int
-	Video                    InputFile
-	Duration                 int
-	Width                    int
-	Height                   int
-	Caption                  string
-	ParseMode                string
-	SupportsStreaming        bool
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot    Bot
+	ChatId int
+	file
+	Duration            int
+	Width               int
+	Height              int
+	Caption             string
+	ParseMode           string
+	SupportsStreaming   bool
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableVideo) Send() (*Message, error) {
@@ -836,28 +568,28 @@ func (msg *sendableVideo) Send() (*Message, error) {
 	v.Add("supports_streaming", strconv.FormatBool(msg.SupportsStreaming))
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.Video.send("sendVideo", v, "video")
+	r, err := msg.bot.sendFile(msg.file, "video", "sendVideo", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendVideo")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableVoice struct {
-	bot                      Bot
-	ChatId                   int
-	Voice                    InputFile
-	Caption                  string
-	ParseMode                string
-	Duration                 int
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot    Bot
+	ChatId int
+	file
+	Caption             string
+	ParseMode           string
+	Duration            int
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableVoice) Send() (*Message, error) {
@@ -877,27 +609,27 @@ func (msg *sendableVoice) Send() (*Message, error) {
 	v.Add("duration", strconv.Itoa(msg.Duration))
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.Voice.send("sendVoice", v, "voice")
+	r, err := msg.bot.sendFile(msg.file, "voice", "sendVoice", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendVoice")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableVideoNote struct {
-	bot                      Bot
-	ChatId                   int
-	VideoNote                InputFile
-	Duration                 int
-	Length                   int
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot    Bot
+	ChatId int
+	file
+	Duration            int
+	Length              int
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableVideoNote) Send() (*Message, error) {
@@ -916,15 +648,16 @@ func (msg *sendableVideoNote) Send() (*Message, error) {
 	v.Add("length", strconv.Itoa(msg.Length))
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.VideoNote.send("sendVideoNote", v, "video_note")
+	r, err := msg.bot.sendFile(msg.file, "video", "sendVideoNote", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendVideoNote")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableEditMessageMedia struct {
@@ -932,7 +665,7 @@ type sendableEditMessageMedia struct {
 	ChatId          int
 	MessageId       int
 	InlineMessageId string
-	InputMedia      InputMedia
+	Media           InputMedia
 	ReplyMarkup     ReplyMarkup
 }
 
@@ -951,36 +684,29 @@ func (msg *sendableEditMessageMedia) Send() (*Message, error) {
 	v.Add("message_id", strconv.Itoa(msg.MessageId))
 	v.Add("inline_message_id", msg.InlineMessageId)
 	v.Add("reply_markup", string(replyMarkup))
-
-	mediaMap, data, err := msg.InputMedia.toJson(0)
+	vals, err := json.Marshal(msg.Media.getValues(msg.Media.getType()))
 	if err != nil {
 		return nil, err
 	}
+	v.Add("media", string(vals))
 
-	bs, err := json.Marshal(mediaMap)
-	v.Add("media", string(bs))
-
-	var r json.RawMessage
-	if len(data) != 0 {
-		r, err = msg.bot.Post("editMessageMedia", v, data)
-	} else {
-		r, err = msg.bot.Get("editMessageMedia", v)
-	}
+	r, err := Get(msg.bot, "editMessageMedia", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to editMessageMedia")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableMediaGroup struct {
-	bot                      Bot
-	ChatId                   int
-	ArrInputMedia            []InputMedia
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot                 Bot
+	ChatId              int
+	ArrInputMedia       []InputMedia
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableMediaGroup) Send() (*Message, error) {
@@ -994,26 +720,12 @@ func (msg *sendableMediaGroup) Send() (*Message, error) {
 	}
 
 	var media []byte
-	data := make(map[string]PostFile)
 	if msg.ArrInputMedia != nil {
-		array := make([][]byte, len(msg.ArrInputMedia))
-		for idx, mediaItem := range msg.ArrInputMedia {
-			mediaMap, mediaData, err := mediaItem.toJson(idx)
-			if err != nil {
-				return nil, err
-			}
-
-			array[idx], err = json.Marshal(mediaMap)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to marshal item in array input media")
-			}
-
-			// assign all data elems
-			for k, v := range mediaData {
-				data[k] = v
-			}
+		data := make([]url.Values, len(msg.ArrInputMedia))
+		for i := 0; i < len(msg.ArrInputMedia); i++ {
+			data[i] = msg.ArrInputMedia[i].getValues(msg.ArrInputMedia[i].getType())
 		}
-		vals, err := json.Marshal(array)
+		vals, err := json.Marshal(data)
 		if err != nil {
 			return nil, err
 		}
@@ -1025,35 +737,27 @@ func (msg *sendableMediaGroup) Send() (*Message, error) {
 	v.Add("media", string(media))
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	var r json.RawMessage
-	if len(data) != 0 {
-		r, err = msg.bot.Post("sendMediaGroup", v, data)
-	} else {
-		r, err = msg.bot.Get("sendMediaGroup", v)
-	}
+	r, err := Get(msg.bot, "sendMediaGroup", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendMediaGroup")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableLocation struct {
-	bot                      Bot
-	ChatId                   int
-	Latitude                 float64
-	Longitude                float64
-	HorizontalAccuracy       float64
-	LivePeriod               int
-	Heading                  int
-	ProximityAlertRadius     int
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot                 Bot
+	ChatId              int
+	Latitude            float64
+	Longitude           float64
+	LivePeriod          int
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableLocation) Send() (*Message, error) {
@@ -1070,112 +774,35 @@ func (msg *sendableLocation) Send() (*Message, error) {
 	v.Add("chat_id", strconv.Itoa(msg.ChatId))
 	v.Add("latitude", strconv.FormatFloat(msg.Latitude, 'f', -1, 64))
 	v.Add("longitude", strconv.FormatFloat(msg.Longitude, 'f', -1, 64))
-	v.Add("horizontal_accuracy", strconv.FormatFloat(msg.HorizontalAccuracy, 'f', -1, 64))
 	v.Add("live_period", strconv.Itoa(msg.LivePeriod))
-	v.Add("heading", strconv.Itoa(msg.Heading))
-	v.Add("proximity_alert_radius", strconv.Itoa(msg.ProximityAlertRadius))
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.bot.Get("sendLocation", v)
+	r, err := Get(msg.bot, "sendLocation", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendLocation")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
-type sendableEditMessageLiveLocation struct {
-	bot                  Bot
-	ChatId               int
-	MessageId            int
-	InlineMessageId      string
-	Latitude             float64
-	Longitude            float64
-	HorizontalAccuracy   float64
-	Heading              int
-	ProximityAlertRadius int
-	ReplyMarkup          ReplyMarkup
-}
-
-func (msg *sendableEditMessageLiveLocation) Send() (*Message, error) {
-	var replyMarkup []byte
-	if msg.ReplyMarkup != nil {
-		var err error
-		replyMarkup, err = msg.ReplyMarkup.Marshal()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	v := url.Values{}
-	v.Add("chat_id", strconv.Itoa(msg.ChatId))
-	v.Add("message_id", strconv.Itoa(msg.MessageId))
-	v.Add("inline_message_id", msg.InlineMessageId)
-	v.Add("latitude", strconv.FormatFloat(msg.Latitude, 'f', -1, 64))
-	v.Add("longitude", strconv.FormatFloat(msg.Longitude, 'f', -1, 64))
-	v.Add("horizontal_accuracy", strconv.FormatFloat(msg.HorizontalAccuracy, 'f', -1, 64))
-	v.Add("heading", strconv.Itoa(msg.Heading))
-	v.Add("proximity_alert_radius", strconv.Itoa(msg.ProximityAlertRadius))
-	v.Add("reply_markup", string(replyMarkup))
-
-	r, err := msg.bot.Get("editMessageLiveLocation", v)
-	if err != nil {
-		return nil, err
-	}
-
-	return msg.bot.ParseMessage(r)
-}
-
-type sendableStopMessageLiveLocation struct {
-	bot             Bot
-	ChatId          int
-	MessageId       int
-	InlineMessageId string
-	ReplyMarkup     ReplyMarkup
-}
-
-func (msg *sendableStopMessageLiveLocation) Send() (*Message, error) {
-	var replyMarkup []byte
-	if msg.ReplyMarkup != nil {
-		var err error
-		replyMarkup, err = msg.ReplyMarkup.Marshal()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	v := url.Values{}
-	v.Add("chat_id", strconv.Itoa(msg.ChatId))
-	v.Add("message_id", strconv.Itoa(msg.MessageId))
-	v.Add("inline_message_id", msg.InlineMessageId)
-	v.Add("reply_markup", string(replyMarkup))
-
-	r, err := msg.bot.Get("stopMessageLiveLocation", v)
-	if err != nil {
-		return nil, err
-	}
-
-	return msg.bot.ParseMessage(r)
-}
+// TODO: edit live location
+// TODO: stop live location
 
 type sendableVenue struct {
-	bot                      Bot
-	ChatId                   int
-	Latitude                 float64
-	Longitude                float64
-	Title                    string
-	Address                  string
-	FoursquareId             string
-	FoursquareType           string
-	GooglePlaceId            string
-	GooglePlaceType          string
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot                 Bot
+	ChatId              int
+	Latitude            float64
+	Longitude           float64
+	Title               string
+	Address             string
+	FoursquareId        string
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableVenue) Send() (*Message, error) {
@@ -1195,32 +822,29 @@ func (msg *sendableVenue) Send() (*Message, error) {
 	v.Add("title", msg.Title)
 	v.Add("address", msg.Address)
 	v.Add("foursquare_id", msg.FoursquareId)
-	v.Add("foursquare_type", msg.FoursquareType)
-	v.Add("google_place_id", msg.GooglePlaceId)
-	v.Add("google_place_type", msg.GooglePlaceType)
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.bot.Get("sendVenue", v)
+	r, err := Get(msg.bot, "sendVenue", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendVenue")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableContact struct {
-	bot                      Bot
-	ChatId                   int
-	PhoneNumber              string
-	FirstName                string
-	LastName                 string
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot                 Bot
+	ChatId              int
+	PhoneNumber         string
+	FirstName           string
+	LastName            string
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableContact) Send() (*Message, error) {
@@ -1240,15 +864,16 @@ func (msg *sendableContact) Send() (*Message, error) {
 	v.Add("last_name", msg.LastName)
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.bot.Get("sendContact", v)
+	r, err := Get(msg.bot, "sendContact", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendContact")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableChatAction struct {
@@ -1262,29 +887,30 @@ func (msg *sendableChatAction) Send() (bool, error) {
 	v.Add("chat_id", strconv.Itoa(msg.ChatId))
 	v.Add("Action", msg.Action)
 
-	r, err := msg.bot.Get("sendChatAction", v)
+	r, err := Get(msg.bot, "sendChatAction", v)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "unable to sendChatAction")
 	}
-
-	var bb bool
-	return bb, json.Unmarshal(r, &bb)
+	if !r.Ok {
+		return false, errors.New(r.Description)
+	}
+	var newMsg bool
+	return newMsg, json.Unmarshal(r.Result, newMsg)
 }
 
 type sendableAnimation struct {
-	bot       Bot
-	ChatId    int
-	Animation InputFile
-	Duration  int
-	Width     int
-	Height    int
+	bot    Bot
+	ChatId int
+	file
+	Duration int
+	Width    int
+	Height   int
 	// Thumb // TODO: support this
-	Caption                  string
-	ParseMode                string
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	Caption             string
+	ParseMode           string
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendableAnimation) Send() (*Message, error) {
@@ -1307,35 +933,26 @@ func (msg *sendableAnimation) Send() (*Message, error) {
 	v.Add("parse_mode", msg.ParseMode)
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.Animation.send("sendAnimation", v, "animation")
+	r, err := msg.bot.sendFile(msg.file, "animation", "sendAnimation", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendAnimation")
 	}
-
-	return msg.bot.ParseMessage(r)
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendablePoll struct {
-	bot                      Bot
-	ChatId                   int
-	Question                 string
-	Options                  []string
-	IsAnonymous              bool
-	Type                     string
-	AllowsMultipleAnswers    bool
-	CorrectOptionId          int
-	Explanation              string
-	ExplanationParseMode     string
-	OpenPeriod               int
-	CloseDate                int
-	IsClosed                 bool
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
+	bot                 Bot
+	ChatId              int
+	Question            string
+	Options             []string
+	DisableNotification bool
+	ReplyToMessageId    int
+	ReplyMarkup         ReplyMarkup
 }
 
 func (msg *sendablePoll) Send() (*Message, error) {
@@ -1359,71 +976,27 @@ func (msg *sendablePoll) Send() (*Message, error) {
 	v.Add("chat_id", strconv.Itoa(msg.ChatId))
 	v.Add("question", msg.Question)
 	v.Add("options", string(optionsBytes))
-	v.Add("is_anonymous", strconv.FormatBool(msg.IsAnonymous))
-	v.Add("type", msg.Type)
-	v.Add("allows_multiple_answers", strconv.FormatBool(msg.AllowsMultipleAnswers))
-	v.Add("correct_option_id", strconv.Itoa(msg.CorrectOptionId))
-	v.Add("explanation", msg.Explanation)
-	v.Add("explanation_parse_mode", msg.ExplanationParseMode)
-	v.Add("open_period", strconv.Itoa(msg.OpenPeriod))
-	v.Add("close_date", strconv.Itoa(msg.CloseDate))
-	v.Add("is_closed", strconv.FormatBool(msg.IsClosed))
 	v.Add("disable_notification", strconv.FormatBool(msg.DisableNotification))
 	v.Add("reply_to_message_id", strconv.Itoa(msg.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(msg.AllowSendingWithoutReply))
 	v.Add("reply_markup", string(replyMarkup))
 
-	r, err := msg.bot.Get("sendPoll", v)
+	r, err := Get(msg.bot, "sendChatPoll", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to sendChatPoll")
 	}
-
-	return msg.bot.ParseMessage(r)
-}
-
-type sendableDice struct {
-	bot                      Bot
-	ChatId                   int
-	Emoji                    string
-	DisableNotification      bool
-	ReplyToMessageId         int
-	AllowSendingWithoutReply bool
-	ReplyMarkup              ReplyMarkup
-}
-
-func (d *sendableDice) Send() (*Message, error) {
-	var replyMarkup []byte
-	if d.ReplyMarkup != nil {
-		var err error
-		replyMarkup, err = d.ReplyMarkup.Marshal()
-		if err != nil {
-			return nil, err
-		}
+	if !r.Ok {
+		return nil, errors.New(r.Description)
 	}
-
-	v := url.Values{}
-	v.Add("chat_id", strconv.Itoa(d.ChatId))
-	v.Add("emoji", d.Emoji)
-	v.Add("disable_notification", strconv.FormatBool(d.DisableNotification))
-	v.Add("reply_to_message_id", strconv.Itoa(d.ReplyToMessageId))
-	v.Add("allow_sending_without_reply", strconv.FormatBool(d.AllowSendingWithoutReply))
-	v.Add("reply_markup", string(replyMarkup))
-
-	r, err := d.bot.Get("sendDice", v)
-	if err != nil {
-		return nil, err
-	}
-
-	return d.bot.ParseMessage(r)
+	return msg.bot.ParseMessage(r.Result)
 }
 
 type sendableCallbackQuery struct {
 	bot             Bot
-	CallbackQueryId string
-	Text            string
-	ShowAlert       bool
-	Url             string
-	CacheTime       int
+	CallbackQueryId string `json:"callback_query_id"`
+	Text            string `json:"text"`
+	ShowAlert       bool   `json:"show_alert"`
+	Url             string `json:"url"`
+	CacheTime       int    `json:"cache_time"`
 }
 
 func (cbq *sendableCallbackQuery) Send() (bool, error) {
@@ -1435,4 +1008,23 @@ func (cbq *sendableCallbackQuery) Send() (bool, error) {
 	v.Add("cache_time", strconv.Itoa(cbq.CacheTime))
 
 	return cbq.bot.boolSender("answerCallbackQuery", v)
+}
+
+func (b Bot) sendFile(msg file, fileType string, endpoint string, params url.Values) (*Response, error) {
+	if msg.FileId != "" {
+		params.Add(fileType, msg.FileId)
+		return Get(b, endpoint, params)
+	} else if msg.Path != "" {
+		file, err := os.Open(msg.Path)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+
+		return Post(b, fileType, endpoint, params, file, msg.Name)
+	} else if msg.Reader != nil {
+		return Post(b, fileType, endpoint, params, msg.Reader, msg.Name)
+	} else {
+		return nil, errors.New("the message had no files that could be sent")
+	}
 }

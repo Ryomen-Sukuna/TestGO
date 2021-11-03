@@ -2,8 +2,11 @@ package ext
 
 import (
 	"encoding/json"
+	"io"
 	"net/url"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type Sticker struct {
@@ -12,7 +15,7 @@ type Sticker struct {
 	Width        int          `json:"width"`
 	Height       int          `json:"height"`
 	IsAnimated   bool         `json:"is_animated"`
-	Thumb        *PhotoSize   `json:"thumb"`
+	Thumb        PhotoSize    `json:"thumb"`
 	Emoji        string       `json:"emoji"`
 	SetName      string       `json:"set_name"`
 	MaskPosition MaskPosition `json:"mask_position"`
@@ -20,12 +23,12 @@ type Sticker struct {
 }
 
 type StickerSet struct {
-	Name          string     `json:"name"`
-	Title         string     `json:"title"`
-	IsAnimated    bool       `json:"is_animated"`
-	ContainsMasks bool       `json:"contains_masks"`
-	Stickers      []Sticker  `json:"stickers"`
-	Thumb         *PhotoSize `json:"thumb"`
+	bot           Bot       `json:"-"`
+	Name          string    `json:"name"`
+	Title         string    `json:"title"`
+	IsAnimated    bool      `json:"is_animated"`
+	ContainsMasks bool      `json:"contains_masks"`
+	Stickers      []Sticker `json:"stickers"`
 }
 
 type MaskPosition struct {
@@ -35,15 +38,41 @@ type MaskPosition struct {
 	Scale  float64 `json:"scale"`
 }
 
-func (b Bot) SendSticker(chatId int, s InputFile) (*Message, error) {
+func (b Bot) SendStickerStr(chatId int, stickerId string) (*Message, error) {
 	sticker := b.NewSendableSticker(chatId)
-	sticker.Sticker = s
+	sticker.FileId = stickerId
 	return sticker.Send()
 }
 
-func (b Bot) ReplySticker(chatId int, s InputFile, replyToMessageId int) (*Message, error) {
+func (b Bot) SendStickerPath(chatId int, path string) (*Message, error) {
 	sticker := b.NewSendableSticker(chatId)
-	sticker.Sticker = s
+	sticker.Path = path
+	return sticker.Send()
+}
+
+func (b Bot) SendStickerReader(chatId int, reader io.Reader) (*Message, error) {
+	sticker := b.NewSendableSticker(chatId)
+	sticker.Reader = reader
+	return sticker.Send()
+}
+
+func (b Bot) ReplyStickerStr(chatId int, stickerId string, replyToMessageId int) (*Message, error) {
+	sticker := b.NewSendableSticker(chatId)
+	sticker.FileId = stickerId
+	sticker.ReplyToMessageId = replyToMessageId
+	return sticker.Send()
+}
+
+func (b Bot) ReplyStickerPath(chatId int, path string, replyToMessageId int) (*Message, error) {
+	sticker := b.NewSendableSticker(chatId)
+	sticker.Path = path
+	sticker.ReplyToMessageId = replyToMessageId
+	return sticker.Send()
+}
+
+func (b Bot) ReplyStickerReader(chatId int, reader io.Reader, replyToMessageId int) (*Message, error) {
+	sticker := b.NewSendableSticker(chatId)
+	sticker.Reader = reader
 	sticker.ReplyToMessageId = replyToMessageId
 	return sticker.Send()
 }
@@ -52,41 +81,69 @@ func (b Bot) GetStickerSet(name string) (*StickerSet, error) {
 	v := url.Values{}
 	v.Add("name", name)
 
-	r, err := b.Get("getStickerSet", v)
+	r, err := Get(b, "getStickerSet", v)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unable to getStickerSet")
 	}
+	if !r.Ok {
+		return nil, errors.New(r.Description)
+	}
+
 	var ss StickerSet
-	return &ss, json.Unmarshal(r, &ss)
+	return &ss, json.Unmarshal(r.Result, &ss)
 }
 
-func (b Bot) UploadSticker(userId int, s InputFile) (*File, error) {
+func (b Bot) UploadStickerFileStr(userId int, pngStickerId string) (*File, error) {
 	uploadSticker := b.NewSendableUploadStickerFile(userId)
-	uploadSticker.PngSticker = s
+	uploadSticker.FileId = pngStickerId
 	return uploadSticker.Send()
 }
 
-func (b Bot) CreateNewPngStickerSet(userId int, name string, title string, pngSticker InputFile, emojis string) (bool, error) {
-	createNew := b.NewSendableCreateNewStickerSet(userId, name, title, emojis)
-	createNew.PngSticker = &pngSticker
+func (b Bot) UploadStickerFilePath(userId int, path string) (*File, error) {
+	uploadSticker := b.NewSendableUploadStickerFile(userId)
+	uploadSticker.Path = path
+	return uploadSticker.Send()
+}
+
+func (b Bot) UploadStickerFileReader(userId int, reader io.Reader) (*File, error) {
+	uploadSticker := b.NewSendableUploadStickerFile(userId)
+	uploadSticker.Reader = reader
+	return uploadSticker.Send()
+}
+
+func (b Bot) CreateNewStickerSetStr(userId int, name string, title string, pngStickerid string, emojis string) (bool, error) {
+	createNew := b.NewSendableCreateNewSticker(userId, name, title, emojis)
+	createNew.FileId = pngStickerid
 	return createNew.Send()
 }
 
-func (b Bot) CreateNewTgsStickerSet(userId int, name string, title string, tgsSticker InputFile, emojis string) (bool, error) {
-	createNew := b.NewSendableCreateNewStickerSet(userId, name, title, emojis)
-	createNew.TgsSticker = &tgsSticker
+func (b Bot) CreateNewStickerSetPath(userId int, name string, title string, path string, emojis string) (bool, error) {
+	createNew := b.NewSendableCreateNewSticker(userId, name, title, emojis)
+	createNew.Path = path
 	return createNew.Send()
 }
 
-func (b Bot) AddPngStickerToSet(userId int, name string, pngSticker InputFile, emojis string) (bool, error) {
+func (b Bot) CreateNewStickerSetReader(userId int, name string, title string, reader io.Reader, emojis string) (bool, error) {
+	createNew := b.NewSendableCreateNewSticker(userId, name, title, emojis)
+	createNew.Reader = reader
+	return createNew.Send()
+}
+
+func (b Bot) AddStickerToSetStr(userId int, name string, pngStickerId string, emojis string) (bool, error) {
 	addSticker := b.NewSendableAddStickerToSet(userId, name, emojis)
-	addSticker.PngSticker = &pngSticker
+	addSticker.FileId = pngStickerId
 	return addSticker.Send()
 }
 
-func (b Bot) AddTgsStickerToSet(userId int, name string, tgsSticker InputFile, emojis string) (bool, error) {
+func (b Bot) AddStickerToSetPath(userId int, name string, path string, emojis string) (bool, error) {
 	addSticker := b.NewSendableAddStickerToSet(userId, name, emojis)
-	addSticker.TgsSticker = &tgsSticker
+	addSticker.Path = path
+	return addSticker.Send()
+}
+
+func (b Bot) AddStickerToSetReader(userId int, name string, reader io.Reader, emojis string) (bool, error) {
+	addSticker := b.NewSendableAddStickerToSet(userId, name, emojis)
+	addSticker.Reader = reader
 	return addSticker.Send()
 }
 
@@ -95,24 +152,30 @@ func (b Bot) SetStickerPositionInSet(sticker string, position int) (bool, error)
 	v.Add("sticker", sticker)
 	v.Add("position", strconv.Itoa(position))
 
-	r, err := b.Get("setStickerPositionInSet", v)
+	r, err := Get(b, "setStickerPositionInSet", v)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "unable to setStickerPositionInSet")
+	}
+	if !r.Ok {
+		return false, errors.New(r.Description)
 	}
 
 	var bb bool
-	return bb, json.Unmarshal(r, &bb)
+	return bb, json.Unmarshal(r.Result, &bb)
 }
 
 func (b Bot) DeleteStickerFromSet(sticker string) (bool, error) {
 	v := url.Values{}
 	v.Add("sticker", sticker)
 
-	r, err := b.Get("deleteStickerFromSet", v)
+	r, err := Get(b, "deleteStickerFromSet", v)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "unable to deleteStickerFromSet")
+	}
+	if !r.Ok {
+		return false, errors.New(r.Description)
 	}
 
 	var bb bool
-	return bb, json.Unmarshal(r, &bb)
+	return bb, json.Unmarshal(r.Result, &bb)
 }
