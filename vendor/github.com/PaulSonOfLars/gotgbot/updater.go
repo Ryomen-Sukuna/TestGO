@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/sirupsen/logrus"
 
 	"github.com/PaulSonOfLars/gotgbot/ext"
 )
@@ -22,22 +21,27 @@ type Updater struct {
 	Bot          *ext.Bot
 	Updates      chan *RawUpdate
 	Dispatcher   *Dispatcher
-	UpdateGetter ext.BaseRequester
+	UpdateGetter *ext.TgBotGetter
 }
 
 // NewUpdater Creates a new updater struct, paired with the necessary dispatcher and bot structs.
-func NewUpdater(l *zap.Logger, token string) (*Updater, error) {
+func NewUpdater(token string) (*Updater, error) {
 	u := &Updater{}
-	bot, err := ext.NewBot(l, token)
+	user, err := ext.Bot{Token: token, Logger: logrus.New()}.GetMe()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get bot")
+		return nil, errors.Wrapf(err, "unable to create new updater")
 	}
-
-	u.Bot = bot
+	u.Bot = &ext.Bot{
+		Token:     token,
+		Id:        user.Id,
+		FirstName: user.FirstName,
+		UserName:  user.Username,
+		Logger:    logrus.New(),
+	}
 	u.Updates = make(chan *RawUpdate)
 	u.Dispatcher = NewDispatcher(u.Bot, u.Updates)
-	u.UpdateGetter = ext.BaseRequester{
-		Client: http.Client{
+	u.UpdateGetter = &ext.TgBotGetter{
+		Client: &http.Client{
 			Transport:     nil,
 			CheckRedirect: nil,
 			Jar:           nil,
@@ -75,35 +79,28 @@ func (u Updater) startPolling(clean bool) {
 	v.Add("timeout", strconv.Itoa(0))
 	offset := 0
 	for {
-		// Note: use updateGetter.Get instead of u.Bot.Get to use the updater timeout instead of bot command timeout
-		r, err := u.UpdateGetter.Get(u.Bot.Logger, u.Bot.Token, "getUpdates", v)
+		r, err := u.UpdateGetter.Get(*u.Bot, "getUpdates", v)
 		if err != nil {
-			u.Bot.Logger.Errorw("unable to getUpdates", zap.Error(err))
-			u.Bot.Logger.Error("Sleeping for 1 second...")
+			logrus.WithError(err).Error("unable to getUpdates")
+			continue
+
+		} else if !r.Ok {
+			logrus.Errorf("getUpdates error: %v", r.Description)
+			logrus.Errorf("Sleeping for 1 second...")
 			time.Sleep(time.Second)
 			continue
 
-		} else if r != nil {
+		} else if r.Result != nil {
 			var rawUpdates []json.RawMessage
-			if err := json.Unmarshal(r, &rawUpdates); err != nil {
-				u.Bot.Logger.Errorw("failed to unmarshal update while polling",
-					zap.Field{
-						Key:    "result",
-						Type:   zapcore.StringType,
-						String: string(r)},
-					zap.Error(err))
+			if err := json.Unmarshal(r.Result, &rawUpdates); err != nil {
+				logrus.WithError(err).Error("failed to unmarshal update while polling", r.Result)
 				continue
 			}
 			if len(rawUpdates) > 0 {
 				// parse last one here
 				lastUpd, err := initUpdate(RawUpdate(rawUpdates[len(rawUpdates)-1]), *u.Bot)
 				if err != nil {
-					u.Bot.Logger.Errorw("failed to init update while polling",
-						zap.Field{
-							Key:    "result",
-							Type:   zapcore.StringType,
-							String: string(r)},
-						zap.Error(err))
+					logrus.WithError(err).Error("failed to init update while polling", r.Result)
 					continue
 				}
 				offset = lastUpd.UpdateId + 1
@@ -111,12 +108,12 @@ func (u Updater) startPolling(clean bool) {
 				if clean {
 					continue
 				}
-			} else if len(rawUpdates) == 0 { // TODO: check this is fine on high loads
+			} else if len(rawUpdates) == 0 { // TODO: this is unsustainable, and may eventually break on higher loads.
 				clean = false
 			}
 
 			for _, updData := range rawUpdates {
-				temp := RawUpdate(updData) // can't take address of a cast
+				temp := RawUpdate(updData) // necessary to avoid memory stuff from loops
 				u.Updates <- &temp
 			}
 		}
@@ -132,8 +129,28 @@ func (u Updater) Idle() {
 
 // TODO: finish handling updates on sigint
 
+type Webhook struct {
+	Serve     string // base url to where you listen
+	ServePath string // path you listen to
+	ServePort int    // port you listen on
+	URL       string // where you set the webhook to send to
+	// CertPath       string   // TODO
+	MaxConnections int      // max connections; max 100, default 40
+	AllowedUpdates []string // which updates to allow
+}
+
+func (w Webhook) GetListenUrl() string {
+	if w.Serve == "" {
+		w.Serve = "0.0.0.0"
+	}
+	if w.ServePort == 0 {
+		w.ServePort = 443
+	}
+	return fmt.Sprintf("%s:%d", w.Serve, w.ServePort)
+}
+
 // StartWebhook Start the webhook server
-func (u Updater) StartWebhook(webhook ext.Webhook) {
+func (u Updater) StartWebhook(webhook Webhook) {
 	go u.Dispatcher.Start()
 	http.HandleFunc("/"+webhook.ServePath, func(w http.ResponseWriter, r *http.Request) {
 		bytes, _ := ioutil.ReadAll(r.Body)
@@ -144,22 +161,65 @@ func (u Updater) StartWebhook(webhook ext.Webhook) {
 		// todo: TLS when using certs
 		err := http.ListenAndServe(webhook.GetListenUrl(), nil)
 		if err != nil {
-			u.Bot.Logger.Errorw("failed to init update while polling", zap.Error(errors.WithStack(err)))
+			logrus.Fatal(errors.WithStack(err))
 		}
 	}()
 }
 
 // RemoveWebhook remove the webhook url from telegram servers
 func (u Updater) RemoveWebhook() (bool, error) {
-	return u.Bot.DeleteWebhook()
+	r, err := ext.Get(*u.Bot, "deleteWebhook", nil)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to remove webhook")
+	}
+	var bb bool
+	return bb, json.Unmarshal(r.Result, &bb)
 }
 
 // SetWebhook Set the webhook url for telegram to contact with updates
-func (u Updater) SetWebhook(path string, webhook ext.Webhook) (bool, error) {
-	return u.Bot.SetWebhook(path, webhook)
+func (u Updater) SetWebhook(path string, webhook Webhook) (bool, error) {
+	allowedUpdates := webhook.AllowedUpdates
+	if allowedUpdates == nil {
+		allowedUpdates = []string{}
+	}
+	allowed, err := json.Marshal(allowedUpdates)
+	if err != nil {
+		return false, errors.Wrap(err, "cannot marshal allowedUpdates")
+	}
+
+	v := url.Values{}
+	v.Add("url", webhook.URL+"/"+path)
+	// v.Add("certificate", ) // todo: add certificate support
+	v.Add("max_connections", strconv.Itoa(webhook.MaxConnections))
+	v.Add("allowed_updates", string(allowed))
+
+	r, err := ext.Get(*u.Bot, "setWebhook", v)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to set webhook")
+	}
+
+	var bb bool
+	return bb, json.Unmarshal(r.Result, &bb)
 }
 
-// GetWebhookInfo Get webhook info from telegram
-func (u Updater) GetWebhookInfo() (*ext.WebhookInfo, error) {
-	return u.Bot.GetWebhookInfo()
+type WebhookInfo struct {
+	URL                  string   `json:"url"`
+	HasCustomCertificate bool     `json:"has_custom_certificate"`
+	PendingUpdateCount   int      `json:"pending_update_count"`
+	LastErrorDate        int      `json:"last_error_date"`
+	LastErrorMessage     int      `json:"last_error_message"`
+	MaxConnections       int      `json:"max_connections"`
+	AllowedUpdates       []string `json:"allowed_updates"`
+}
+
+// GetWebhookInfo Get webhook info from telegram servers
+func (u Updater) GetWebhookInfo() (*WebhookInfo, error) {
+	r, err := ext.Get(*u.Bot, "getWebhookInfo", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var wh WebhookInfo
+	return &wh, json.Unmarshal(r.Result, &wh)
+
 }

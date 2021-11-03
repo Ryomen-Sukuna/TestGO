@@ -52,7 +52,7 @@ func (h Regex) CheckUpdate(u *gotgbot.Update) (bool, error) {
 	if text == "" {
 		text = u.EffectiveMessage.Caption
 	}
-	res, err := regexp.MatchString(h.Match, text)
+	res, err := regexp.Match(h.Match, []byte(text))
 	if err != nil {
 		return false, errors.Wrapf(err, "Could not match regexp")
 	}
