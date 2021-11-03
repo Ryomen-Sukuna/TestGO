@@ -1,7 +1,8 @@
 # github.com/PaulSonOfLars/gotg_md2html v0.0.0-20190928101618-7d177d22631c
 github.com/PaulSonOfLars/gotg_md2html
-# github.com/PaulSonOfLars/gotgbot v0.0.0-20200103184348-7ae29654e65a
+# github.com/PaulSonOfLars/gotgbot v1.0.0
 github.com/PaulSonOfLars/gotgbot
+github.com/PaulSonOfLars/gotgbot/dice
 github.com/PaulSonOfLars/gotgbot/ext
 github.com/PaulSonOfLars/gotgbot/handlers
 github.com/PaulSonOfLars/gotgbot/handlers/Filters
@@ -31,7 +32,7 @@ github.com/lib/pq
 github.com/lib/pq/hstore
 github.com/lib/pq/oid
 github.com/lib/pq/scram
-# github.com/pkg/errors v0.8.0
+# github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/sirupsen/logrus v1.8.1
 github.com/sirupsen/logrus
@@ -39,6 +40,17 @@ github.com/sirupsen/logrus
 github.com/tcnksm/go-httpstat
 # github.com/wI2L/jettison v0.7.3
 github.com/wI2L/jettison
+# go.uber.org/atomic v1.6.0
+go.uber.org/atomic
+# go.uber.org/multierr v1.5.0
+go.uber.org/multierr
+# go.uber.org/zap v1.14.1
+go.uber.org/zap
+go.uber.org/zap/buffer
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+go.uber.org/zap/zapcore
 # golang.org/x/sys v0.0.0-20210423082822-04245dca01da
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix

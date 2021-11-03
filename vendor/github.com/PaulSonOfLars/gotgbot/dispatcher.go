@@ -5,7 +5,7 @@ import (
 	"runtime/debug"
 	"sort"
 
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/PaulSonOfLars/gotgbot/ext"
 )
@@ -42,11 +42,12 @@ func (d Dispatcher) Start() {
 		select {
 		case limiter <- struct{}{}:
 		default:
-			logrus.Debugf("update dispatcher has reached limit of %d", d.MaxRoutines)
+			// There is value in having this as a warn, but its also causing logspam... so let's not.
+			d.Bot.Logger.Debugf("update dispatcher has reached limit of %d", d.MaxRoutines)
 			limiter <- struct{}{} // make sure to send anyway
 		}
 		go func(upd *RawUpdate) {
-			d.processUpdate(upd)
+			d.ProcessRawUpdate(upd)
 			<-limiter
 		}(upd)
 	}
@@ -58,19 +59,23 @@ type ContinueGroups struct{}
 func (eg EndGroups) Error() string      { return "Group iteration ended" }
 func (eg ContinueGroups) Error() string { return "Group iteration has continued" }
 
-func (d Dispatcher) processUpdate(upd *RawUpdate) {
+func (d Dispatcher) ProcessRawUpdate(upd *RawUpdate) {
 	defer func() {
 		if r := recover(); r != nil {
-			logrus.Error(r)
+			d.Bot.Logger.Error(r)
 			debug.PrintStack()
 		}
 	}()
 
 	update, err := initUpdate(*upd, *d.Bot)
 	if err != nil {
-		logrus.WithError(err).Error("failed to init update while processing")
+		d.Bot.Logger.Errorw("failed to init update while processing", zap.Error(err))
 		return
 	}
+	d.ProcessUpdate(update)
+}
+
+func (d Dispatcher) ProcessUpdate(update *Update) {
 	for _, groupNum := range *d.handlerGroups {
 		for _, handler := range d.handlers[groupNum] {
 			if res, err := handler.CheckUpdate(update); res {
@@ -82,12 +87,12 @@ func (d Dispatcher) processUpdate(upd *RawUpdate) {
 					case ContinueGroups:
 						continue
 					default:
-						logrus.Warning(err.Error())
+						d.Bot.Logger.Warnw("error handling update", err.Error())
 					}
 				}
 				break // move to next group
 			} else if err != nil {
-				logrus.WithError(err).Error("failed to check update while processing")
+				d.Bot.Logger.Errorw("failed to check update while processing", zap.Error(err))
 				return
 			}
 		}
