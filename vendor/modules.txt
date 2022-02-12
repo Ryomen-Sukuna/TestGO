@@ -1,4 +1,4 @@
-# github.com/PaulSonOfLars/gotg_md2html v0.0.0-20190928101618-7d177d22631c
+# github.com/PaulSonOfLars/gotg_md2html v0.0.0-20211230150750-e814e6d20322
 github.com/PaulSonOfLars/gotg_md2html
 # github.com/PaulSonOfLars/gotgbot v0.0.0-20200103184348-7ae29654e65a
 github.com/PaulSonOfLars/gotgbot

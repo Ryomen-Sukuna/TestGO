@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.37.4 // indirect
-	github.com/PaulSonOfLars/gotg_md2html v0.0.0-20190928101618-7d177d22631c
+	github.com/PaulSonOfLars/gotg_md2html v0.0.0-20211230150750-e814e6d20322
 	github.com/PaulSonOfLars/gotgbot v0.0.0-20200103184348-7ae29654e65a
 	github.com/allegro/bigcache v1.2.1
 	github.com/go-redis/redis v6.15.9+incompatible
