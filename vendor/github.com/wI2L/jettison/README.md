@@ -16,11 +16,13 @@
 
 ## Installation
 
-Jettison uses the new [Go modules](https://github.com/golang/go/wiki/Modules). Releases are tagged according to the _SemVer_ format, prefixed with a `v`, starting from *0.2.0*. You can get the latest release using the following command.
+Jettison uses [Go modules](https://github.com/golang/go/wiki/Modules). Releases are tagged according to the _SemVer_ format, prefixed with a `v`, starting from *0.2.0*. You can get the latest release using the following command.
 
 ```console
-$ go get github.com/wI2L/jettison
+$ go get github.com/wI2L/jettison@latest
 ```
+
+:warning: From version `v0.7.4`, the packages requires [Go 1.17+](https://golang.org/doc/install) to build, due to the usage of the [new build constraints](https://go.googlesource.com/proposal/+/master/design/draft-gobuild.md).
 
 ## Key features
 
@@ -64,7 +66,7 @@ All notable differences with the standard library behavior are listed below. Ple
 
 - Nil struct fields implementing the `encoding.TextMarshaler` interface are encoded as `null`, while the `encoding/json` package currently panic because of that. See this [issue](https://github.com/golang/go/issues/34235) for more details.<sup>[1]</sup>
 
-<sup>1: The issues mentioned above have had their associated CL merged, and should be shipped with Go 1.14.</sup>
+<sup>1: The issues mentioned above have had their associated CL merged, and was released with Go 1.14.</sup>
 
 ## Usage
 
