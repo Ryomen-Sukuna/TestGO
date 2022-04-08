@@ -13,7 +13,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.4.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/lib/pq v1.10.4
+	github.com/lib/pq v1.10.5
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tcnksm/go-httpstat v0.2.0
 	github.com/wI2L/jettison v0.7.4
